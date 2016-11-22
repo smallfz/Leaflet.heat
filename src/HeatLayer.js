@@ -99,7 +99,7 @@ L.HeatLayer = (L.Layer ? L.Layer : L.Class).extend({
     },
 
     _updateOptions: function () {
-        this._heat.radius(this.options.radius || this._heat.defaultRadius, this.options.blur);
+        // this._heat.radius(this.options.radius || this._heat.defaultRadius, this.options.blur);
 
         if (this.options.gradient) {
             this._heat.gradient(this.options.gradient);
@@ -129,8 +129,14 @@ L.HeatLayer = (L.Layer ? L.Layer : L.Class).extend({
         if (!this._map) {
             return;
         }
+	var _r = this.options.radius;
+	_r = _r * Math.pow(2, this._map.getZoom());
+	var _blur = this.options.blur || (_r * 0.75);
+	this._heat.radius(_r, _blur);
+	this._heat._maxHeat = this.options.maxHeat || 1.0;
+	this._heat._maxOpacity = this.options.maxOpacity || 1.0;
         var data = [],
-            r = this._heat._r,
+            r = this._heat._r, // * Math.pow(2, this._map.getZoom()),
             size = this._map.getSize(),
             bounds = new L.Bounds(
                 L.point([-r, -r]),
@@ -139,24 +145,29 @@ L.HeatLayer = (L.Layer ? L.Layer : L.Class).extend({
             max = this.options.max === undefined ? 1 : this.options.max,
             maxZoom = this.options.maxZoom === undefined ? this._map.getMaxZoom() : this.options.maxZoom,
             v = 1 / Math.pow(2, Math.max(0, Math.min(maxZoom - this._map.getZoom(), 12))),
-            cellSize = r / 2,
+            cellSize = 1, //Math.max(size.x / 500.0, 1), //r / 2,
             grid = [],
             panePos = this._map._getMapPanePos(),
             offsetX = panePos.x % cellSize,
             offsetY = panePos.y % cellSize,
             i, len, p, cell, x, y, j, len2, k;
 
+	// console.info('zoom: '+ this._map.getZoom());
+	// console.info('r: '+ r);
+
         // console.time('process');
         for (i = 0, len = this._latlngs.length; i < len; i++) {
             p = this._map.latLngToContainerPoint(this._latlngs[i]);
             if (bounds.contains(p)) {
-                x = Math.floor((p.x - offsetX) / cellSize) + 2;
-                y = Math.floor((p.y - offsetY) / cellSize) + 2;
+                x = Math.floor((p.x - offsetX) / cellSize) + 0;
+                y = Math.floor((p.y - offsetY) / cellSize) + 0;
 
-                var alt =
-                    this._latlngs[i].alt !== undefined ? this._latlngs[i].alt :
-                    this._latlngs[i][2] !== undefined ? +this._latlngs[i][2] : 1;
-                k = alt * v;
+                // var alt =
+                //     this._latlngs[i].alt !== undefined ? this._latlngs[i].alt :
+                //     this._latlngs[i][2] !== undefined ? +this._latlngs[i][2] : 1;
+                // k = alt * v;
+
+		k = v;
 
                 grid[y] = grid[y] || [];
                 cell = grid[y][x];
